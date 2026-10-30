@@ -16,7 +16,8 @@
         update: true
 
     - name: Symlink configs using GNU Stow
-      ansible.builtin.command:
-        cmd: "stow -d /home/{{ target_user }}/.dotfiles -t /home/{{ target_user }} ."
+      ansible.builtin.shell:
+        cmd: "stow -v --adopt -d /home/{{ target_user }}/.dotfiles -t /home/{{ target_user }} *"
+        chdir: "/home/{{ target_user }}/.dotfiles"
       register: stow_run
       changed_when: "'LINK' in stow_run.stderr"
