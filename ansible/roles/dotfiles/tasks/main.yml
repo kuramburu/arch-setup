@@ -1,0 +1,22 @@
+---
+- name: Install GNU Stow
+  community.general.pacman:
+    name:
+      - stow
+      - git
+    state: present
+
+- name: Sync and symlink dotfiles
+  become: false
+  block:
+    - name: Clone dotfiles repository
+      ansible.builtin.git:
+        repo: "{{ dotfiles_repo }}"
+        dest: "/home/{{ target_user }}/.dotfiles"
+        update: true
+
+    - name: Symlink configs using GNU Stow
+      ansible.builtin.command:
+        cmd: "stow -d /home/{{ target_user }}/.dotfiles -t /home/{{ target_user }} ."
+      register: stow_run
+      changed_when: "'LINK' in stow_run.stderr"

@@ -1,0 +1,63 @@
+---
+- name: Install KDE Plasma, Display Manager, and Audio
+  community.general.pacman:
+    name:
+      # Desktop & DM
+      - plasma-desktop
+      - plasma-login-manager
+      - plasma-nm
+      - plasma-pa
+      - power-profiles-daemon
+      - sddm
+      - kscreen
+      - powerdevil
+      - breeze-gtk
+      - kde-gtk-config
+      - kwallet-pam
+      - kwalletmanager
+      # Bluetooth
+      - bluez
+      - bluez-utils
+      - bluedevil
+      # Audio
+      - pipewire-pulse
+      - pipewire-alsa
+      - wireplumber
+      - pavucontrol
+      # Core Apps & Terminals
+      - dolphin
+      - kate
+      - ark
+      - spectacle
+      - konsole
+      - ghostty
+      - fastfetch
+      - btop
+      - ripgrep
+      - plocate
+      - brave-origin-bin
+      # Graphics (AMD + 32-bit Multilib)
+      - mesa
+      - vulkan-radeon
+      - lib32-mesa
+      - lib32-vulkan-radeon
+      # Fonts
+      - noto-fonts
+      - noto-fonts-emoji
+      - ttf-liberation
+      - ttf-meslo-nerd
+      # Gaming
+      - steam
+      - gamescope
+    state: present
+
+- name: Enable SDDM display manager
+  ansible.builtin.systemd:
+    name: sddm
+    enabled: true
+
+- name: Enable Bluetooth service
+  ansible.builtin.systemd:
+    name: bluetooth
+    enabled: true
+    state: started

@@ -1,0 +1,91 @@
+---
+- name: Enable multilib
+  ansible.builtin.replace:
+    path: /etc/pacman.conf
+    regexp: '^#\[multilib\]\n#Include = /etc/pacman.d/mirrorlist'
+    replace: "[multilib]\nInclude = /etc/pacman.d/mirrorlist"
+
+- name: Install system storage, security, and snapshot utilities
+  community.general.pacman:
+    name:
+      - snapper
+      - snap-pac
+      - btrfs-assistant
+      - ufw
+      - ufw-extras
+      - tailscale
+      - smartmontools
+      - cpupower
+      - cachyos-settings
+      - dmemcg-booster
+    state: present
+    update_cache: true
+
+- name: Check if Snapper root configuration already exists
+  ansible.builtin.stat:
+    path: /etc/snapper/configs/root
+  register: snapper_root_config
+
+- name: Perform Snapper root configuration workaround
+  when: not snapper_root_config.stat.exists
+  block:
+    - name: Unmount /.snapshots to allow Snapper to create its structure
+      ansible.posix.mount:
+        path: /.snapshots
+        state: unmounted
+
+    - name: Generate Snapper root configuration
+      ansible.builtin.command:
+        cmd: snapper -c root create-config /
+
+    - name: Delete the nested subvolume Snapper just created
+      ansible.builtin.command:
+        cmd: btrfs subvolume delete /.snapshots
+
+    - name: Recreate /.snapshots as a standard directory
+      ansible.builtin.file:
+        path: /.snapshots
+        state: directory
+        mode: '0750'
+
+    - name: Remount the correct @snapshots subvolume from fstab
+      ansible.builtin.command:
+        cmd: mount /.snapshots
+
+- name: Ensure secondary drive mount directory exists
+  ansible.builtin.file:
+    path: /mnt/data
+    state: directory
+
+- name: Mount secondary ext4 drive via fstab
+  ansible.posix.mount:
+    path: /mnt/data
+    src: "UUID={{ secondary_drive_uuid }}"
+    fstype: ext4
+    opts: "defaults,noatime,nofail"
+    state: mounted
+
+- name: Apply correct permissions to ext4 mount AFTER mounting
+  ansible.builtin.file:
+    path: /mnt/data
+    state: directory
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: '0755'
+
+- name: Enable UFW, enable logging, and set default deny incoming policy
+  community.general.ufw:
+    state: enabled
+    default: deny
+    direction: incoming
+    logging: 'on'
+
+- name: Enable system services and timers
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - tailscaled
+    - snapper-timeline.timer
+    - snapper-cleanup.timer
