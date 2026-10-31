@@ -19,6 +19,8 @@
       - bluez
       - bluez-utils
       - bluedevil
+      # Network
+      - openssh
       # Audio
       - pipewire-pulse
       - pipewire-alsa
