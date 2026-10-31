@@ -66,26 +66,37 @@ if mountpoint -q /run/archiso/bootmnt 2>/dev/null; then
     fi
 fi
 
-# Physical disks only: exclude ramdisks (1), loop devices (7) and optical drives (11)
+# Physical disks only: exclude ramdisks (1), loop devices (7) and optical drives (11).
+# DISK_MENU holds a human-readable line per disk (size, model, and the filesystem
+# labels found on its partitions, e.g. "data"), index-aligned with AVAILABLE_DISKS.
 AVAILABLE_DISKS=()
+DISK_MENU=()
 while IFS= read -r d; do
-    [[ -n "${d}" && "${d}" != "${LIVE_DISK}" ]] && AVAILABLE_DISKS+=("${d}")
+    [[ -n "${d}" && "${d}" != "${LIVE_DISK}" ]] || continue
+    d_size="$(lsblk -dn -o SIZE "${d}" 2>/dev/null | xargs || true)"
+    d_model="$(lsblk -dn -o MODEL "${d}" 2>/dev/null | xargs || true)"
+    d_labels="$(lsblk -n -o LABEL "${d}" 2>/dev/null | awk 'NF' | paste -sd, - || true)"
+    AVAILABLE_DISKS+=("${d}")
+    DISK_MENU+=("${d}  ${d_size:-?}  ${d_model:-unknown model}  [labels: ${d_labels:-none}]")
 done < <(lsblk -d -p -n -o NAME -e 1,7,11)
 
 [[ "${#AVAILABLE_DISKS[@]}" -gt 0 ]] || die "No target disks detected."
 [[ -z "${LIVE_DISK}" ]] || echo "(Excluding live installation medium: ${LIVE_DISK})"
-lsblk -d -p -o NAME,SIZE,MODEL,TRAN,SERIAL "${AVAILABLE_DISKS[@]}"
+# Full tree (no -d) so partition labels such as "data" are visible
+lsblk -p -o NAME,SIZE,MODEL,TRAN,SERIAL,FSTYPE,LABEL "${AVAILABLE_DISKS[@]}"
 
 echo ""
 echo "Select the target disk to partition and install Arch Linux:"
 PS3="Enter selection number (1-${#AVAILABLE_DISKS[@]}): "
-select SELECTED_DISK in "${AVAILABLE_DISKS[@]}"; do
-    if [[ -n "${SELECTED_DISK:-}" && -b "${SELECTED_DISK}" ]]; then
-        DISK="${SELECTED_DISK}"
-        break
-    else
-        echo "Invalid selection. Enter a valid number from the list."
+select CHOICE in "${DISK_MENU[@]}"; do
+    if [[ -n "${CHOICE:-}" && "${REPLY}" =~ ^[0-9]+$ ]]; then
+        SELECTED_DISK="${AVAILABLE_DISKS[$((REPLY - 1))]}"
+        if [[ -b "${SELECTED_DISK}" ]]; then
+            DISK="${SELECTED_DISK}"
+            break
+        fi
     fi
+    echo "Invalid selection. Enter a valid number from the list."
 done
 
 # Resolve canonical path in case a symlink or by-id path was passed

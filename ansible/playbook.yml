@@ -6,7 +6,7 @@
   vars:
     target_user: xyz
     dotfiles_repo: "https://github.com/kuramburu/dotfiles.git"
-    secondary_drive_uuid: "35d95c58-fc0f-4fc6-b350-a641b6965be2"
+    secondary_drive_label: data
 
   roles:
     - role: system

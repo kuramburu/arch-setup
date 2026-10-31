@@ -67,10 +67,12 @@
     path: /mnt/data
     state: directory
 
-- name: Mount secondary ext4 drive via fstab
+# The mount module matches fstab entries by mount point, so this also replaces
+# any stale line for /mnt/data (e.g. one written with a wrong UUID).
+- name: Mount secondary ext4 drive via fstab (by filesystem label)
   ansible.posix.mount:
     path: /mnt/data
-    src: "UUID={{ secondary_drive_uuid }}"
+    src: "LABEL={{ secondary_drive_label }}"
     fstype: ext4
     opts: "defaults,noatime,nofail"
     state: mounted
@@ -101,6 +103,7 @@
     enabled: true
     state: started
   loop:
+    - ufw
     - tailscaled
     - snapper-timeline.timer
     - snapper-cleanup.timer
