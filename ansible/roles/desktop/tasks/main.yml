@@ -36,11 +36,20 @@
       - ripgrep
       - plocate
       - brave-origin-bin
+      - obsidian
       # Graphics (AMD + 32-bit Multilib)
       - mesa
       - vulkan-radeon
       - lib32-mesa
       - lib32-vulkan-radeon
+      # media
+      - spotify-launcher
+      - gwenview
+      - haruna
+      - kimageformats
+      - qt6-imageformats
+      - kdegraphics-thumbnailers
+      - ffmpegthumbs
       # Fonts
       - noto-fonts
       - noto-fonts-emoji
