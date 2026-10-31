@@ -61,3 +61,73 @@
     name: bluetooth
     enabled: true
     state: started
+
+- name: Ensure KDE Discover is absent
+  community.general.pacman:
+    name:
+      - discover
+    state: absent
+
+- name: Ensure system color profiles directory exists
+  ansible.builtin.file:
+    path: /usr/share/color/icc
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copy ICC monitor profile to system store
+  ansible.builtin.copy:
+    src: rtings-icc-profile-AW3423DWF.icm
+    dest: /usr/share/color/icc/rtings-icc-profile-AW3423DWF.icm
+    group: root
+    mode: '0644'
+
+- name: Ensure Desktop directory exists
+  ansible.builtin.file:
+    path: "/home/{{ target_user }}/Desktop"
+    state: directory
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: '0755'
+
+- name: Place post-install checklist on Desktop
+  ansible.builtin.copy:
+    dest: "/home/{{ target_user }}/Desktop/POST_INSTALL_CHECKLIST.txt"
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: '0644'
+    content: |
+      =======================================================
+               ARCH / CACHYOS POST-INSTALL CHECKLIST
+      =======================================================
+
+      1. DISPLAY & COLOR MANAGEMENT
+         [ ] Open System Settings -> Display & Monitor.
+         [ ] Verify refresh rate (e.g., 144Hz / 165Hz / 240Hz).
+         [ ] Under "Color Profile", assign "monitor.icc" from the dropdown.
+
+      2. STORAGE & MOUNTS
+         [ ] Check 2TB secondary drive: `ls -la /mnt/data`
+         [ ] Confirm permissions: should be owned by {{ target_user }}:{{ target_user }}.
+
+      3. NETWORKING & SECURITY
+         [ ] Authenticate Tailscale:
+             sudo tailscale up
+         [ ] Verify firewall status:
+             sudo ufw status verbose
+
+      4. BTRFS & SNAPPER
+         [ ] Verify initial snapshot generation:
+             sudo snapper -c root list
+         [ ] Verify grub-btrfs hook generates snapshot entries:
+             sudo grub-mkconfig -o /boot/grub/grub.cfg
+
+      5. APPLICATION LOGINS & SECRETS
+         [ ] Sign in to browser / Bitwarden / 1Password.
+         [ ] Generate or restore SSH keys:
+             ssh-keygen -t ed25519 -C "{{ target_user }}@xyzA26"
+         [ ] Add SSH key to GitHub / GitLab accounts.
+
+      =======================================================
+      Delete this file once all tasks are completed!

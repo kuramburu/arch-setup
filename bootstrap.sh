@@ -351,7 +351,7 @@ printf '%s:%s\n' "${TARGET_USER}" "${USER_PASS}" | arch-chroot /mnt chpasswd
 unset USER_PASS
 
 echo "=== 13. Pre-cloning setup repo ==="
-if ! arch-chroot /mnt su - "${TARGET_USER}" -c "git clone '${SETUP_REPO_URL}' ~/arch-setup"; then
+if ! arch-chroot /mnt su - "${TARGET_USER}" -c "git clone '${SETUP_REPO_URL}' ~/.arch-setup"; then
     echo "Warning: could not clone ${SETUP_REPO_URL} (private repo or placeholder URL?)."
     echo "         Clone it manually after first boot."
 fi

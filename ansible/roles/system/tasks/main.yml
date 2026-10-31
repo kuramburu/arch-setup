@@ -26,31 +26,41 @@
     path: /etc/snapper/configs/root
   register: snapper_root_config
 
-- name: Perform Snapper root configuration workaround
+- name: Initialize Snapper with dedicated @snapshots subvolume
   when: not snapper_root_config.stat.exists
   block:
-    - name: Unmount /.snapshots to allow Snapper to create its structure
+    - name: Unmount /.snapshots if mounted
       ansible.posix.mount:
         path: /.snapshots
         state: unmounted
 
+    - name: Remove existing /.snapshots mountpoint directory
+      ansible.builtin.file:
+        path: /.snapshots
+        state: absent
+
     - name: Generate Snapper root configuration
       ansible.builtin.command:
         cmd: snapper -c root create-config /
+      changed_when: true
 
-    - name: Delete the nested subvolume Snapper just created
+    - name: Delete dummy subvolume created by Snapper
       ansible.builtin.command:
         cmd: btrfs subvolume delete /.snapshots
+      changed_when: true
 
-    - name: Recreate /.snapshots as a standard directory
+    - name: Recreate /.snapshots mountpoint directory
       ansible.builtin.file:
         path: /.snapshots
         state: directory
+        owner: root
+        group: root
         mode: '0750'
 
-    - name: Remount the correct @snapshots subvolume from fstab
+    - name: Remount dedicated @snapshots subvolume from fstab
       ansible.builtin.command:
         cmd: mount /.snapshots
+      changed_when: true
 
 - name: Ensure secondary drive mount directory exists
   ansible.builtin.file:
@@ -79,6 +89,11 @@
     default: deny
     direction: incoming
     logging: 'on'
+
+- name: Set system-wide X11 and Wayland keyboard layout to German
+  ansible.builtin.command:
+    cmd: localectl set-x11-keymap de pc105 nodeadkeys
+  changed_when: false
 
 - name: Enable system services and timers
   ansible.builtin.systemd:
