@@ -103,6 +103,22 @@
     group: "{{ target_user }}"
     mode: '0755'
 
+- name: Ensure user local bin directory exists
+  ansible.builtin.file:
+    path: "/home/{{ target_user }}/.local/bin"
+    state: directory
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: '0755'
+
+- name: Install post-install gaming bootstrap script
+  ansible.builtin.copy:
+    src: post-install.sh
+    dest: "/home/{{ target_user }}/.local/bin/post-install"
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: '0755'
+
 - name: Place post-install checklist on Desktop
   ansible.builtin.copy:
     dest: "/home/{{ target_user }}/Desktop/POST_INSTALL_CHECKLIST.txt"
