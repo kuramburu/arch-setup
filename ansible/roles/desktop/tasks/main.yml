@@ -50,6 +50,9 @@
       - qt6-imageformats
       - kdegraphics-thumbnailers
       - ffmpegthumbs
+      - signal-desktop
+      - telegram-desktop
+      - discord
       # Fonts
       - noto-fonts
       - noto-fonts-emoji
